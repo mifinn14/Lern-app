@@ -281,6 +281,31 @@ td {
   padding: 0.8rem;
 }
 
+.chat-box {
+  margin-top: 0.8rem;
+  min-height: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.5rem;
+  background: #f7f9ff;
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+
+.chat-msg {
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+}
+
+.chat-msg.user {
+  background: #dce8ff;
+}
+
+.chat-msg.ai {
+  background: #dff9ec;
+}
+
 .calc-card {
   max-width: 420px;
 }

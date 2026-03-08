@@ -8,7 +8,8 @@
   timerSeconds: 25 * 60,
   timerRunning: false,
   timerRef: null,
-  calcExpr: ""
+  calcExpr: "",
+  aiCurrentTask: null
 };
 
 function defaultEvents() {
@@ -28,6 +29,18 @@ const focusToggle = document.getElementById("focusToggle");
 const avgPreview = document.getElementById("avgPreview");
 const nextEvents = document.getElementById("nextEvents");
 const plannerSummary = document.getElementById("plannerSummary");
+
+const aiTopic = document.getElementById("aiTopic");
+const aiLevel = document.getElementById("aiLevel");
+const aiGenerateBtn = document.getElementById("aiGenerateBtn");
+const aiTask = document.getElementById("aiTask");
+const aiAnswerInput = document.getElementById("aiAnswerInput");
+const aiCheckBtn = document.getElementById("aiCheckBtn");
+const aiExplainBtn = document.getElementById("aiExplainBtn");
+const aiFeedback = document.getElementById("aiFeedback");
+const aiQuestionInput = document.getElementById("aiQuestionInput");
+const aiAskBtn = document.getElementById("aiAskBtn");
+const aiChat = document.getElementById("aiChat");
 
 const taskTitle = document.getElementById("taskTitle");
 const taskPriority = document.getElementById("taskPriority");
@@ -250,6 +263,68 @@ function searchDictionary() {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function createAiTask(topic, level) {
+  if (topic === "mathe") {
+    const max = level === "leicht" ? 10 : level === "mittel" ? 20 : 40;
+    const a = randomInt(2, Math.floor(max / 2));
+    const x = randomInt(2, Math.floor(max / 3));
+    const b = randomInt(1, Math.floor(max / 4));
+    const c = a * x + b;
+    return {
+      question: `Löse nach x auf: ${a}x + ${b} = ${c}`,
+      answer: String(x),
+      explanation: `1) ${b} auf beiden Seiten abziehen: ${a}x = ${c - b}. 2) Durch ${a} teilen: x = ${x}.`
+    };
+  }
+
+  if (topic === "deutsch") {
+    return {
+      question: "Nenne den Unterschied zwischen \"das\" und \"dass\" in einem Satz.",
+      answer: "das artikel/relativpronomen, dass konjunktion",
+      explanation: "\"Das\" ist meistens Artikel oder Pronomen. \"Dass\" ist eine Konjunktion und leitet einen Nebensatz ein."
+    };
+  }
+
+  return {
+    question: "Bilde einen Satz im Present Perfect mit \"to learn\".",
+    answer: "i have learned",
+    explanation: "Present Perfect: have/has + Past Participle. Beispiel: I have learned a lot today."
+  };
+}
+
+function normalizeAnswer(value) {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function appendAiChat(role, text) {
+  const line = document.createElement("div");
+  line.className = `chat-msg ${role}`;
+  line.textContent = text;
+  aiChat.appendChild(line);
+  aiChat.scrollTop = aiChat.scrollHeight;
+}
+
+function answerAiQuestion(question) {
+  const q = question.toLowerCase();
+  if (q.includes("gleichung")) {
+    return "Bei Gleichungen: erst + oder - rückgängig machen, dann * oder /. Ziel: x alleine.";
+  }
+  if (q.includes("prozent")) {
+    return "Prozentformel: Grundwert * Prozentsatz / 100 = Prozentwert.";
+  }
+  if (q.includes("dass") || q.includes("das")) {
+    return "\"Dass\" verbindet Nebensätze. \"Das\" ist Artikel oder Pronomen.";
+  }
+  if (q.includes("present perfect")) {
+    return "Present Perfect: have/has + Past Participle. Beispiel: I have learned.";
+  }
+  return "Frag mich gern zu Mathe, Deutsch oder Englisch. Ich erkläre es dir Schritt für Schritt.";
+}
+
 function formatTime(totalSeconds) {
   const min = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
   const sec = (totalSeconds % 60).toString().padStart(2, "0");
@@ -322,6 +397,57 @@ tabs.forEach((tab) => {
 focusToggle.addEventListener("click", () => {
   state.focusMode = !state.focusMode;
   updateFocusMode();
+});
+
+aiGenerateBtn.addEventListener("click", () => {
+  state.aiCurrentTask = createAiTask(aiTopic.value, aiLevel.value);
+  aiTask.textContent = state.aiCurrentTask.question;
+  aiFeedback.textContent = "Aufgabe erzeugt. Gib jetzt deine Antwort ein.";
+  aiAnswerInput.value = "";
+});
+
+aiCheckBtn.addEventListener("click", () => {
+  if (!state.aiCurrentTask) {
+    aiFeedback.textContent = "Erzeuge zuerst eine Aufgabe.";
+    return;
+  }
+
+  const expected = normalizeAnswer(state.aiCurrentTask.answer);
+  const given = normalizeAnswer(aiAnswerInput.value);
+  if (!given) {
+    aiFeedback.textContent = "Bitte gib eine Antwort ein.";
+    return;
+  }
+
+  if (given.includes(expected) || expected.includes(given)) {
+    aiFeedback.textContent = "Sehr gut. Das ist richtig.";
+  } else {
+    aiFeedback.textContent = "Noch nicht ganz. Lass dir die Erklärung anzeigen.";
+  }
+});
+
+aiExplainBtn.addEventListener("click", () => {
+  if (!state.aiCurrentTask) {
+    aiFeedback.textContent = "Erzeuge zuerst eine Aufgabe.";
+    return;
+  }
+  aiFeedback.textContent = state.aiCurrentTask.explanation;
+});
+
+aiAskBtn.addEventListener("click", () => {
+  const question = aiQuestionInput.value.trim();
+  if (!question) {
+    return;
+  }
+  appendAiChat("user", question);
+  appendAiChat("ai", answerAiQuestion(question));
+  aiQuestionInput.value = "";
+});
+
+aiQuestionInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    aiAskBtn.click();
+  }
 });
 
 addTaskBtn.addEventListener("click", () => {
@@ -491,4 +617,5 @@ renderEventList();
 renderCalendar();
 renderTimer();
 updateFocusMode();
+appendAiChat("ai", "Hi, ich bin deine Lern-KI. Frag mich zu Mathe, Deutsch oder Englisch.");
 

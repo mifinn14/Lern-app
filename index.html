@@ -25,6 +25,7 @@
 
   <nav class="tabs" aria-label="Seiten">
     <button class="tab-btn active" data-page="dashboard">Dashboard</button>
+    <button class="tab-btn" data-page="ai">Lern-KI</button>
     <button class="tab-btn" data-page="planner">Lernplan</button>
     <button class="tab-btn" data-page="grades">Notenschnitt</button>
     <button class="tab-btn" data-page="calendar">Kalender</button>
@@ -51,6 +52,58 @@
         <article class="card">
           <h3>Nächste Termine</h3>
           <ul id="nextEvents" class="list"></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" id="ai">
+      <div class="card">
+        <h2>Lern-KI</h2>
+        <p>Wähle ein Thema, lass dir Aufgaben erzeugen und stelle Fragen mit Erklärungen.</p>
+        <div class="form-grid">
+          <label>
+            Thema
+            <select id="aiTopic">
+              <option value="mathe">Mathe</option>
+              <option value="deutsch">Deutsch</option>
+              <option value="englisch">Englisch</option>
+            </select>
+          </label>
+          <label>
+            Schwierigkeitsgrad
+            <select id="aiLevel">
+              <option value="leicht">Leicht</option>
+              <option value="mittel">Mittel</option>
+              <option value="schwer">Schwer</option>
+            </select>
+          </label>
+          <button id="aiGenerateBtn" class="btn btn-primary" type="button">Aufgabe erzeugen</button>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <h3>Aufgabe</h3>
+          <p id="aiTask" class="result">Noch keine Aufgabe vorhanden.</p>
+          <label>
+            Deine Antwort
+            <input id="aiAnswerInput" type="text" placeholder="Hier antworten..." />
+          </label>
+          <div class="timer-actions">
+            <button id="aiCheckBtn" class="btn btn-primary" type="button">Antwort prüfen</button>
+            <button id="aiExplainBtn" class="btn" type="button">Erklärung anzeigen</button>
+          </div>
+          <p id="aiFeedback" class="result">Feedback erscheint hier.</p>
+        </article>
+
+        <article class="card">
+          <h3>KI-Chat</h3>
+          <label>
+            Frage
+            <input id="aiQuestionInput" type="text" placeholder="z. B. Wie löse ich eine lineare Gleichung?" />
+          </label>
+          <button id="aiAskBtn" class="btn btn-primary" type="button">Frage senden</button>
+          <div id="aiChat" class="chat-box"></div>
         </article>
       </div>
     </section>
