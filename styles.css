@@ -211,6 +211,30 @@ td {
   padding: 0.55rem 0.7rem;
 }
 
+.task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.task-meta {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.task-done {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.badge.hoch { background: #ef4444; }
+.badge.mittel { background: #f59e0b; }
+.badge.niedrig { background: #10b981; }
+
 .calendar-toolbar {
   display: flex;
   justify-content: space-between;

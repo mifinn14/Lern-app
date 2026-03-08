@@ -1,7 +1,7 @@
 ﻿const state = {
   grades: JSON.parse(localStorage.getItem("grades") || "[]"),
   events: JSON.parse(localStorage.getItem("events") || "null") || defaultEvents(),
-  dictionary: JSON.parse(localStorage.getItem("dictionary") || "null") || defaultDictionary(),
+  tasks: JSON.parse(localStorage.getItem("tasks") || "[]"),
   focusMode: JSON.parse(localStorage.getItem("focusMode") || "false"),
   currentPage: "dashboard",
   currentMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -21,22 +21,21 @@ function defaultEvents() {
   ];
 }
 
-function defaultDictionary() {
-  return {
-    analyse: "Untersuchung eines Sachverhalts in einzelne Bestandteile.",
-    hypothese: "Vorläufige Annahme, die überprüft werden kann.",
-    argument: "Begründete Aussage zur Unterstützung einer Position.",
-    interpretation: "Deutung eines Textes oder Sachverhalts.",
-    konzentration: "Fokussierte Aufmerksamkeit auf eine Aufgabe."
-  };
-}
-
 const tabs = [...document.querySelectorAll(".tab-btn")];
 const pages = [...document.querySelectorAll(".page")];
 
 const focusToggle = document.getElementById("focusToggle");
 const avgPreview = document.getElementById("avgPreview");
 const nextEvents = document.getElementById("nextEvents");
+const plannerSummary = document.getElementById("plannerSummary");
+
+const taskTitle = document.getElementById("taskTitle");
+const taskPriority = document.getElementById("taskPriority");
+const taskDue = document.getElementById("taskDue");
+const addTaskBtn = document.getElementById("addTaskBtn");
+const clearDoneBtn = document.getElementById("clearDoneBtn");
+const taskList = document.getElementById("taskList");
+const taskStats = document.getElementById("taskStats");
 
 const subjectInput = document.getElementById("subjectInput");
 const gradeInput = document.getElementById("gradeInput");
@@ -59,9 +58,6 @@ const eventList = document.getElementById("eventList");
 const dictSearch = document.getElementById("dictSearch");
 const searchWordBtn = document.getElementById("searchWordBtn");
 const dictResult = document.getElementById("dictResult");
-const newWord = document.getElementById("newWord");
-const newMeaning = document.getElementById("newMeaning");
-const addWordBtn = document.getElementById("addWordBtn");
 
 const calcDisplay = document.getElementById("calcDisplay");
 const calcGrid = document.getElementById("calcGrid");
@@ -120,6 +116,41 @@ function renderGrades() {
   avgPreview.textContent = avg ? `Aktueller Schnitt: ${avg.toFixed(2)}` : "Noch keine Noten vorhanden.";
 
   save("grades", state.grades);
+}
+
+function renderTasks() {
+  const sorted = [...state.tasks].sort((a, b) => {
+    if (!a.due && !b.due) return 0;
+    if (!a.due) return 1;
+    if (!b.due) return -1;
+    return a.due.localeCompare(b.due);
+  });
+
+  taskList.innerHTML = "";
+  sorted.forEach((task) => {
+    const li = document.createElement("li");
+    const prettyDate = task.due ? new Date(task.due).toLocaleDateString("de-DE") : "ohne Datum";
+    li.innerHTML = `
+      <div class="task-row ${task.done ? "task-done" : ""}">
+        <strong>${task.title}</strong>
+        <div class="task-meta">
+          <span class="badge ${task.priority}">${task.priority}</span>
+          <span>${prettyDate}</span>
+          <button class="btn" data-toggle-task="${task.id}">${task.done ? "Offen" : "Erledigt"}</button>
+          <button class="btn btn-danger" data-remove-task="${task.id}">Löschen</button>
+        </div>
+      </div>
+    `;
+    taskList.appendChild(li);
+  });
+
+  const done = state.tasks.filter((t) => t.done).length;
+  const total = state.tasks.length;
+  const summaryText = `${done} von ${total} Aufgaben erledigt.`;
+  taskStats.textContent = summaryText;
+  plannerSummary.textContent = summaryText;
+
+  save("tasks", state.tasks);
 }
 
 function normalizedDate(value) {
@@ -208,14 +239,15 @@ function renderEventList() {
 }
 
 function searchDictionary() {
-  const query = dictSearch.value.trim().toLowerCase();
+  const query = dictSearch.value.trim();
   if (!query) {
     dictResult.textContent = "Bitte ein Wort eingeben.";
     return;
   }
 
-  const meaning = state.dictionary[query];
-  dictResult.textContent = meaning || "Kein Eintrag gefunden. Du kannst das Wort unten hinzufügen.";
+  const url = `https://www.duden.de/suchen/dudenonline/${encodeURIComponent(query)}`;
+  dictResult.innerHTML = `Suche gestartet: <a href="${url}" target="_blank" rel="noopener noreferrer">${query}</a>`;
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 function formatTime(totalSeconds) {
@@ -290,6 +322,51 @@ tabs.forEach((tab) => {
 focusToggle.addEventListener("click", () => {
   state.focusMode = !state.focusMode;
   updateFocusMode();
+});
+
+addTaskBtn.addEventListener("click", () => {
+  const title = taskTitle.value.trim();
+  if (!title) {
+    alert("Bitte eine Aufgabe eintragen.");
+    return;
+  }
+
+  state.tasks.push({
+    id: Date.now(),
+    title,
+    priority: taskPriority.value,
+    due: taskDue.value || "",
+    done: false
+  });
+
+  taskTitle.value = "";
+  taskDue.value = "";
+  renderTasks();
+});
+
+taskList.addEventListener("click", (e) => {
+  const toggleBtn = e.target.closest("button[data-toggle-task]");
+  if (toggleBtn) {
+    const id = Number(toggleBtn.dataset.toggleTask);
+    const task = state.tasks.find((t) => t.id === id);
+    if (task) {
+      task.done = !task.done;
+      renderTasks();
+    }
+    return;
+  }
+
+  const removeBtn = e.target.closest("button[data-remove-task]");
+  if (removeBtn) {
+    const id = Number(removeBtn.dataset.removeTask);
+    state.tasks = state.tasks.filter((t) => t.id !== id);
+    renderTasks();
+  }
+});
+
+clearDoneBtn.addEventListener("click", () => {
+  state.tasks = state.tasks.filter((t) => !t.done);
+  renderTasks();
 });
 
 addGradeBtn.addEventListener("click", () => {
@@ -376,22 +453,6 @@ dictSearch.addEventListener("keydown", (e) => {
   }
 });
 
-addWordBtn.addEventListener("click", () => {
-  const word = newWord.value.trim().toLowerCase();
-  const meaning = newMeaning.value.trim();
-
-  if (!word || !meaning) {
-    alert("Bitte Wort und Bedeutung eintragen.");
-    return;
-  }
-
-  state.dictionary[word] = meaning;
-  save("dictionary", state.dictionary);
-  newWord.value = "";
-  newMeaning.value = "";
-  dictResult.textContent = `Eintrag gespeichert: ${word}`;
-});
-
 calcGrid.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-calc]");
   if (!btn) {
@@ -401,6 +462,10 @@ calcGrid.addEventListener("click", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
+  if (state.currentPage !== "calculator") {
+    return;
+  }
+
   if ((e.key >= "0" && e.key <= "9") || ["+", "-", "*", "/", ".", "(", ")"].includes(e.key)) {
     onCalcInput(e.key);
   }
@@ -421,7 +486,9 @@ pauseTimerBtn.addEventListener("click", pauseTimer);
 resetTimerBtn.addEventListener("click", resetTimer);
 
 renderGrades();
+renderTasks();
 renderEventList();
 renderCalendar();
 renderTimer();
 updateFocusMode();
+

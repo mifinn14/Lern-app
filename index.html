@@ -25,6 +25,7 @@
 
   <nav class="tabs" aria-label="Seiten">
     <button class="tab-btn active" data-page="dashboard">Dashboard</button>
+    <button class="tab-btn" data-page="planner">Lernplan</button>
     <button class="tab-btn" data-page="grades">Notenschnitt</button>
     <button class="tab-btn" data-page="calendar">Kalender</button>
     <button class="tab-btn" data-page="dictionary">Duden</button>
@@ -39,6 +40,10 @@
         <p>Alles Wichtige für Schule und Lernen auf separaten Seiten - schnell, modern und fokussiert.</p>
       </div>
       <div class="grid two">
+        <article class="card">
+          <h3>Lernplan Status</h3>
+          <p id="plannerSummary">0 von 0 Aufgaben erledigt.</p>
+        </article>
         <article class="card" data-focus-hide="true">
           <h3>Notenschnitt</h3>
           <p id="avgPreview">Noch keine Noten vorhanden.</p>
@@ -47,6 +52,36 @@
           <h3>Nächste Termine</h3>
           <ul id="nextEvents" class="list"></ul>
         </article>
+      </div>
+    </section>
+
+    <section class="page" id="planner">
+      <div class="card">
+        <h2>Lernplaner</h2>
+        <div class="form-grid">
+          <label>
+            Aufgabe
+            <input id="taskTitle" type="text" placeholder="z. B. Mathe S.34 Aufgaben 1-5" />
+          </label>
+          <label>
+            Priorität
+            <select id="taskPriority">
+              <option value="hoch">Hoch</option>
+              <option value="mittel">Mittel</option>
+              <option value="niedrig">Niedrig</option>
+            </select>
+          </label>
+          <label>
+            Fällig bis
+            <input id="taskDue" type="date" />
+          </label>
+          <button id="addTaskBtn" class="btn btn-primary" type="button">Aufgabe hinzufügen</button>
+        </div>
+        <div class="stats">
+          <p id="taskStats">0 von 0 erledigt</p>
+          <button id="clearDoneBtn" class="btn btn-danger" type="button">Erledigte löschen</button>
+        </div>
+        <ul id="taskList" class="list"></ul>
       </div>
     </section>
 
@@ -125,29 +160,15 @@
 
     <section class="page" id="dictionary">
       <div class="card">
-        <h2>Mini-Duden</h2>
+        <h2>Offizieller Duden</h2>
         <div class="form-grid">
           <label>
             Wort suchen
             <input id="dictSearch" type="text" placeholder="z. B. Analyse" />
           </label>
-          <button id="searchWordBtn" class="btn btn-primary" type="button">Suchen</button>
+          <button id="searchWordBtn" class="btn btn-primary" type="button">Im Duden suchen</button>
         </div>
-        <p id="dictResult" class="result">Gib ein Wort ein, um die Bedeutung zu sehen.</p>
-      </div>
-      <div class="card">
-        <h3>Eigenes Wort hinzufügen</h3>
-        <div class="form-grid">
-          <label>
-            Wort
-            <input id="newWord" type="text" />
-          </label>
-          <label>
-            Bedeutung
-            <input id="newMeaning" type="text" />
-          </label>
-          <button id="addWordBtn" class="btn" type="button">Zum Duden hinzufügen</button>
-        </div>
+        <p id="dictResult" class="result">Gib ein Wort ein. Die Suche wird auf dem offiziellen Duden geöffnet.</p>
       </div>
     </section>
 
