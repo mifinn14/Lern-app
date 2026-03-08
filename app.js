@@ -15,12 +15,12 @@
 function defaultEvents() {
   const year = new Date().getFullYear();
   return [
-    { title: "Osterferien", date: `${year}-03-30`, type: "ferien" },
-    { title: "Sommerferien", date: `${year}-07-20`, type: "ferien" },
-    { title: "Klausurphase Q2", date: `${year}-05-12`, type: "klausur" },
-    { title: "Elternsprechtag", date: `${year}-11-08`, type: "schule" }
+    { id: `manual-klausur-${year}`, title: "Klausurphase Q2", date: `${year}-05-12`, type: "klausur", source: "manual" },
+    { id: `manual-eltern-${year}`, title: "Elternsprechtag", date: `${year}-11-08`, type: "schule", source: "manual" }
   ];
 }
+
+const BERLIN_SUBDIVISION = "DE-BE";
 
 const tabs = [...document.querySelectorAll(".tab-btn")];
 const pages = [...document.querySelectorAll(".page")];
@@ -82,6 +82,79 @@ const resetTimerBtn = document.getElementById("resetTimer");
 
 function save(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function createId(prefix = "evt") {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+}
+
+function eventStartDate(ev) {
+  return ev.startDate || ev.date;
+}
+
+function eventEndDate(ev) {
+  return ev.endDate || ev.date;
+}
+
+function normalizeStoredEvents() {
+  state.events = (state.events || [])
+    .filter((ev) => ev && (ev.date || ev.startDate))
+    .map((ev) => ({
+      ...ev,
+      id: ev.id || createId("evt"),
+      source: ev.source || "manual"
+    }));
+}
+
+async function fetchBerlinSchoolHolidaysForYear(year) {
+  const validFrom = `${year}-01-01`;
+  const validTo = `${year}-12-31`;
+  const url =
+    `https://openholidaysapi.org/SchoolHolidays?countryIsoCode=DE&subdivisionCode=${BERLIN_SUBDIVISION}` +
+    `&languageIsoCode=DE&validFrom=${validFrom}&validTo=${validTo}`;
+
+  const response = await fetch(url, { headers: { accept: "text/json" } });
+  if (!response.ok) {
+    throw new Error(`Feiertags-API Fehler ${response.status}`);
+  }
+  const holidays = await response.json();
+  return holidays.map((holiday) => {
+    const title = holiday?.name?.[0]?.text || "Schulferien";
+    return {
+      id: `berlin-auto-${holiday.id}`,
+      title,
+      type: "ferien",
+      source: "berlin-auto",
+      startDate: holiday.startDate,
+      endDate: holiday.endDate
+    };
+  });
+}
+
+async function syncBerlinHolidays() {
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear - 1, currentYear, currentYear + 1];
+  try {
+    const holidaySets = await Promise.all(
+      years.map(async (year) => {
+        try {
+          return await fetchBerlinSchoolHolidaysForYear(year);
+        } catch {
+          return [];
+        }
+      })
+    );
+    const autoHolidays = holidaySets.flat();
+    const manualEvents = state.events.filter((ev) => ev.source !== "berlin-auto" && ev.type !== "ferien");
+    const merged = [...manualEvents, ...autoHolidays];
+    const uniqueById = new Map(merged.map((ev) => [ev.id, ev]));
+    state.events = [...uniqueById.values()];
+    save("events", state.events);
+    renderEventList();
+    renderCalendar();
+  } catch {
+    // If the API is not reachable, keep existing events without breaking the UI.
+  }
 }
 
 function setPage(pageId) {
@@ -171,7 +244,11 @@ function normalizedDate(value) {
 }
 
 function getEventsForDate(dateStr) {
-  return state.events.filter((e) => e.date === dateStr);
+  return state.events.filter((ev) => {
+    const start = eventStartDate(ev);
+    const end = eventEndDate(ev);
+    return start && end && dateStr >= start && dateStr <= end;
+  });
 }
 
 function renderCalendar() {
@@ -219,22 +296,29 @@ function renderCalendar() {
 }
 
 function renderEventList() {
-  const sorted = [...state.events].sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = [...state.events].sort((a, b) => eventStartDate(a).localeCompare(eventStartDate(b)));
   eventList.innerHTML = "";
 
-  sorted.forEach((ev, index) => {
+  sorted.forEach((ev) => {
     const li = document.createElement("li");
-    const pretty = new Date(ev.date).toLocaleDateString("de-DE");
+    const start = eventStartDate(ev);
+    const end = eventEndDate(ev);
+    const pretty =
+      start === end
+        ? new Date(start).toLocaleDateString("de-DE")
+        : `${new Date(start).toLocaleDateString("de-DE")} - ${new Date(end).toLocaleDateString("de-DE")}`;
+    const removeBtn =
+      ev.source === "berlin-auto" ? '<span class="badge schule">Berlin Auto</span>' : `<button class="btn" data-remove-event="${ev.id}">Löschen</button>`;
     li.innerHTML = `
       <strong>${ev.title}</strong> (${pretty})
       <span class="badge ${ev.type}">${ev.type}</span>
-      <button class="btn" data-remove-event="${index}">Löschen</button>
+      ${removeBtn}
     `;
     eventList.appendChild(li);
   });
 
   const upcoming = sorted
-    .filter((ev) => new Date(ev.date) >= new Date(new Date().toDateString()))
+    .filter((ev) => new Date(eventEndDate(ev)) >= new Date(new Date().toDateString()))
     .slice(0, 4);
 
   nextEvents.innerHTML = "";
@@ -243,7 +327,7 @@ function renderEventList() {
   } else {
     upcoming.forEach((ev) => {
       const item = document.createElement("li");
-      item.textContent = `${new Date(ev.date).toLocaleDateString("de-DE")} - ${ev.title}`;
+      item.textContent = `${new Date(eventStartDate(ev)).toLocaleDateString("de-DE")} - ${ev.title}`;
       nextEvents.appendChild(item);
     });
   }
@@ -547,7 +631,7 @@ addEventBtn.addEventListener("click", () => {
     return;
   }
 
-  state.events.push({ title, date, type });
+  state.events.push({ id: createId("manual"), title, date, type, source: "manual" });
   eventTitle.value = "";
   eventDate.value = "";
   renderEventList();
@@ -560,13 +644,8 @@ eventList.addEventListener("click", (e) => {
     return;
   }
 
-  const sorted = [...state.events].sort((a, b) => a.date.localeCompare(b.date));
-  const indexInSorted = Number(button.dataset.removeEvent);
-  const targetEvent = sorted[indexInSorted];
-
-  state.events = state.events.filter(
-    (ev) => !(ev.title === targetEvent.title && ev.date === targetEvent.date && ev.type === targetEvent.type)
-  );
+  const eventId = button.dataset.removeEvent;
+  state.events = state.events.filter((ev) => ev.id !== eventId);
 
   renderEventList();
   renderCalendar();
@@ -611,6 +690,7 @@ startTimerBtn.addEventListener("click", startTimer);
 pauseTimerBtn.addEventListener("click", pauseTimer);
 resetTimerBtn.addEventListener("click", resetTimer);
 
+normalizeStoredEvents();
 renderGrades();
 renderTasks();
 renderEventList();
@@ -618,4 +698,5 @@ renderCalendar();
 renderTimer();
 updateFocusMode();
 appendAiChat("ai", "Hi, ich bin deine Lern-KI. Frag mich zu Mathe, Deutsch oder Englisch.");
+syncBerlinHolidays();
 

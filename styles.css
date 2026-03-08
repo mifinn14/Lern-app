@@ -281,6 +281,12 @@ td {
   padding: 0.8rem;
 }
 
+.muted-hint {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .chat-box {
   margin-top: 0.8rem;
   min-height: 220px;
