@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LernPilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow-a"></div>
+  <div class="bg-glow bg-glow-b"></div>
+
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Smart School Suite</p>
+      <h1>LernPilot</h1>
+    </div>
+    <div class="header-actions">
+      <button id="focusToggle" class="btn btn-primary" type="button">Fokusmodus: Aus</button>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Seiten">
+    <button class="tab-btn active" data-page="dashboard">Dashboard</button>
+    <button class="tab-btn" data-page="grades">Notenschnitt</button>
+    <button class="tab-btn" data-page="calendar">Kalender</button>
+    <button class="tab-btn" data-page="dictionary">Duden</button>
+    <button class="tab-btn" data-page="calculator">Taschenrechner</button>
+    <button class="tab-btn" data-page="focus">Fokus-Timer</button>
+  </nav>
+
+  <main>
+    <section class="page active" id="dashboard">
+      <div class="card hero-card">
+        <h2>Dein Lernzentrum</h2>
+        <p>Alles Wichtige für Schule und Lernen auf separaten Seiten - schnell, modern und fokussiert.</p>
+      </div>
+      <div class="grid two">
+        <article class="card" data-focus-hide="true">
+          <h3>Notenschnitt</h3>
+          <p id="avgPreview">Noch keine Noten vorhanden.</p>
+        </article>
+        <article class="card">
+          <h3>Nächste Termine</h3>
+          <ul id="nextEvents" class="list"></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" id="grades">
+      <div class="card" data-focus-hide="true">
+        <h2>Notenschnitt berechnen</h2>
+        <div class="form-grid">
+          <label>
+            Fach
+            <input id="subjectInput" type="text" placeholder="z. B. Mathe" />
+          </label>
+          <label>
+            Note (1-6)
+            <input id="gradeInput" type="number" min="1" max="6" step="0.1" placeholder="z. B. 2.3" />
+          </label>
+          <label>
+            Gewicht
+            <input id="weightInput" type="number" min="1" max="10" step="1" value="1" />
+          </label>
+          <button id="addGradeBtn" class="btn btn-primary" type="button">Note hinzufügen</button>
+        </div>
+        <div class="stats">
+          <p>Gewichteter Schnitt: <strong id="weightedAverage">-</strong></p>
+          <button id="clearGrades" class="btn btn-danger" type="button">Alle Noten löschen</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fach</th>
+                <th>Note</th>
+                <th>Gewicht</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody id="gradesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="calendar">
+      <div class="card">
+        <h2>Schulkalender</h2>
+        <div class="calendar-toolbar">
+          <button class="btn" id="prevMonth" type="button">Zurück</button>
+          <h3 id="calendarTitle"></h3>
+          <button class="btn" id="nextMonth" type="button">Weiter</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+      <div class="card">
+        <h3>Schultermin hinzufügen</h3>
+        <div class="form-grid">
+          <label>
+            Titel
+            <input id="eventTitle" type="text" placeholder="z. B. Klausur Mathe" />
+          </label>
+          <label>
+            Datum
+            <input id="eventDate" type="date" />
+          </label>
+          <label>
+            Typ
+            <select id="eventType">
+              <option value="ferien">Ferien</option>
+              <option value="klausur">Klausurphase</option>
+              <option value="schule">Schultermin</option>
+            </select>
+          </label>
+          <button id="addEventBtn" class="btn btn-primary" type="button">Termin speichern</button>
+        </div>
+        <ul id="eventList" class="list"></ul>
+      </div>
+    </section>
+
+    <section class="page" id="dictionary">
+      <div class="card">
+        <h2>Mini-Duden</h2>
+        <div class="form-grid">
+          <label>
+            Wort suchen
+            <input id="dictSearch" type="text" placeholder="z. B. Analyse" />
+          </label>
+          <button id="searchWordBtn" class="btn btn-primary" type="button">Suchen</button>
+        </div>
+        <p id="dictResult" class="result">Gib ein Wort ein, um die Bedeutung zu sehen.</p>
+      </div>
+      <div class="card">
+        <h3>Eigenes Wort hinzufügen</h3>
+        <div class="form-grid">
+          <label>
+            Wort
+            <input id="newWord" type="text" />
+          </label>
+          <label>
+            Bedeutung
+            <input id="newMeaning" type="text" />
+          </label>
+          <button id="addWordBtn" class="btn" type="button">Zum Duden hinzufügen</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="calculator">
+      <div class="card calc-card">
+        <h2>Taschenrechner</h2>
+        <input id="calcDisplay" class="calc-display" type="text" readonly value="0" />
+        <div class="calc-grid" id="calcGrid">
+          <button data-calc="C">C</button>
+          <button data-calc="(">(</button>
+          <button data-calc=")">)</button>
+          <button data-calc="/">÷</button>
+
+          <button data-calc="7">7</button>
+          <button data-calc="8">8</button>
+          <button data-calc="9">9</button>
+          <button data-calc="*">×</button>
+
+          <button data-calc="4">4</button>
+          <button data-calc="5">5</button>
+          <button data-calc="6">6</button>
+          <button data-calc="-">-</button>
+
+          <button data-calc="1">1</button>
+          <button data-calc="2">2</button>
+          <button data-calc="3">3</button>
+          <button data-calc="+">+</button>
+
+          <button data-calc="0" class="span-2">0</button>
+          <button data-calc=".">.</button>
+          <button data-calc="=">=</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="focus">
+      <div class="card">
+        <h2>Fokus-Timer</h2>
+        <p>Starte einen Lernblock ohne Ablenkung.</p>
+        <div class="timer" id="timerDisplay">25:00</div>
+        <div class="timer-actions">
+          <button id="startTimer" class="btn btn-primary" type="button">Start</button>
+          <button id="pauseTimer" class="btn" type="button">Pause</button>
+          <button id="resetTimer" class="btn btn-danger" type="button">Reset</button>
+        </div>
+      </div>
+      <div class="card focus-info">
+        <h3>Fokusmodus erklärt</h3>
+        <p>Wenn Fokusmodus aktiv ist, werden nicht-lernrelevante Bereiche wie Noteneintragen ausgeblendet. Duden und Taschenrechner bleiben weiterhin sichtbar.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
